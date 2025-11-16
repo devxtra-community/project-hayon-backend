@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from 'passport';
-import { signup, login } from '../controllers/auth.controller';
+import { signup, login, getCurrentUser } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { generateToken } from '../utils/jwt';
 import { console } from 'inspector';
@@ -12,7 +12,7 @@ router.post('/signup', signup);
 router.post('/login', login);
 
 // Get current user
-// router.get('/me', authenticate, getCurrentUser);
+router.get('/me', authenticate, getCurrentUser);
 
 // Google OAuth Routes
 router.get(
@@ -33,17 +33,22 @@ router.get(
     try {
       const user = req.user as any;
       
-      // Generate JWT
       const token = generateToken({
         userId: user._id.toString(),
         email: user.email,
         role: user.role,
       });
 
-      console.log('user:',user );
+      // Set token in HTTP-only cookie (NOT in URL)
+      res.cookie('token', token, {
+        httpOnly: true,      // JavaScript can't access it
+        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+        sameSite: 'lax',     // CSRF protection
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
       
-      // Redirect to frontend with token
-      res.redirect(`${process.env.FRONTEND_URL}/api/auth/callback?token=${token}`);
+      // Redirect WITHOUT token in URL
+      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?success=true`);
     } catch (error) {
       res.redirect(`${process.env.FRONTEND_URL}/login?error=token_generation_failed`);
     }

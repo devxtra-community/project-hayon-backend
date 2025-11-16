@@ -3,21 +3,36 @@ import bcrypt from 'bcrypt';
 import User from '../models/User';
 import { generateToken } from '../utils/jwt';
 
+// Helper function to set cookie
+const setCookieToken = (res: Response, token: string) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+};
+
 // Signup with Email/Password
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, name } = req.body;
-    
-    // Validation
-    if (!email || !password || !name) {
+    const { email, password, confirmPassword, name } = req.body;
+
+    if (!email || !password || !confirmPassword || !name) {
       res.status(400).json({
         success: false,
-        message: 'Email, password, and name are required',
+        message: 'Email, password, confirmPassword, and name are required',
       });
       return;
     }
-    
-    // Check if user exists
+
+    if (password !== confirmPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Passwords do not match',
+      });
+      return;
+    }
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       res.status(400).json({
@@ -26,11 +41,9 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
-    
-    // Hash password
+
     const password_hash = await bcrypt.hash(password, 12);
-    
-    // Create user
+
     const user = await User.create({
       email: email.toLowerCase(),
       name,
@@ -41,19 +54,20 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       },
       role: 'user',
     });
-    
-    // Generate JWT
+
     const token = generateToken({
       userId: user._id.toString(),
       email: user.email,
       role: user.role,
     });
-    
+
+    // Set cookie instead of returning token
+    setCookieToken(res, token);
+
     res.status(201).json({
       success: true,
       message: 'Account created successfully',
       data: {
-        token,
         user: {
           id: user._id,
           email: user.email,
@@ -71,12 +85,12 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+
 // Login with Email/Password
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
     
-    // Validation
     if (!email || !password) {
       res.status(400).json({
         success: false,
@@ -85,7 +99,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    // Find user
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       res.status(401).json({
@@ -95,7 +108,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    // Check if email/password login
     if (user.auth.provider !== 'email' || !user.auth.password_hash) {
       res.status(400).json({
         success: false,
@@ -104,7 +116,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    // Verify password
     const isPasswordValid = await bcrypt.compare(
       password,
       user.auth.password_hash
@@ -118,22 +129,22 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    // Update last login
     user.last_login = new Date();
     await user.save();
     
-    // Generate JWT
     const token = generateToken({
-      userId: user._id.toString() as string,
+      userId: user._id.toString(),
       email: user.email,
       role: user.role,
     });
+    
+    // Set cookie instead of returning token
+    setCookieToken(res, token);
     
     res.status(200).json({
       success: true,
       message: 'Login successful',
       data: {
-        token,
         user: {
           id: user._id,
           email: user.email,
@@ -144,7 +155,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         },
       },
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
@@ -154,31 +164,39 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// // Get Current User
-// export const getCurrentUser = async (
-//   req: Request,
-//   res: Response
-// ): Promise<void> => {
-//   try {
-//     const user = await User.findById(req.user?.userId).select('-auth.password_hash');
+export const getCurrentUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = await User.findById(req.jwtUser?.userId).select('-auth.password_hash');
     
-//     if (!user) {
-//       res.status(404).json({
-//         success: false,
-//         message: 'User not found',
-//       });
-//       return;
-//     }
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
     
-//     res.status(200).json({
-//       success: true,
-//       data: { user },
-//     });
-//   } catch (error) {
-//     console.error('Get user error:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Server error',
-//     });
-//   }
-// };
+    res.status(200).json({
+      success: true,
+      data: { user },
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
+// Logout endpoint (optional but recommended)
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  res.clearCookie('token');
+  res.status(200).json({
+    success: true,
+    message: 'Logged out successfully',
+  });
+};

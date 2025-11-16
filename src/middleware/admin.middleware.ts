@@ -5,7 +5,7 @@ export const isAdmin = (
   res: Response,
   next: NextFunction
 ): void => {
-  if (!req.user) {
+  if (!req.jwtUser) {
     res.status(401).json({
       success: false,
       message: 'Authentication required',
@@ -13,7 +13,7 @@ export const isAdmin = (
     return;
   }
   
-  if (req.user.role !== 'admin') {
+  if (req.jwtUser.role !== 'admin') {
     res.status(403).json({
       success: false,
       message: 'Admin access required',

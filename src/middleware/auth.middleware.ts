@@ -2,10 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken, JWTPayload } from '../utils/jwt';
 
 // Extend Express Request type
+
 declare global {
   namespace Express {
     interface Request {
-      user?: JWTPayload;
+      jwtUser?: JWTPayload;
     }
   }
 }
@@ -16,24 +17,17 @@ export const authenticate = (
   next: NextFunction
 ): void => {
   try {
-    // Get token from header
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = req.cookies.token;
+
+    if (!token) {
       res.status(401).json({
         success: false,
         message: 'No token provided',
       });
       return;
     }
-    
-    const token = authHeader.substring(7); // Remove 'Bearer '
-    
-    // Verify token
     const decoded = verifyToken(token);
-    
-    // Attach user to request
-    req.user = decoded;
+    req.jwtUser = decoded;
     
     next();
   } catch (error) {
