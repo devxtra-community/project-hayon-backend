@@ -1,18 +1,21 @@
 import express from 'express';
 import passport from 'passport';
-import { signup, login, getCurrentUser } from '../controllers/auth.controller';
+import { signup, login, getCurrentUser, logout } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { generateToken } from '../utils/jwt';
-import { console } from 'inspector';
+import cookieParser from 'cookie-parser';
 
 const router = express.Router();
 
-
+router.use(cookieParser())
 router.post('/signup', signup);
 router.post('/login', login);
 
 // Get current user
 router.get('/me', authenticate, getCurrentUser);
+
+// Logout user
+router.delete('/logout',logout)
 
 // Google OAuth Routes
 router.get(

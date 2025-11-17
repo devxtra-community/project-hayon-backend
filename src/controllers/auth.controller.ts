@@ -168,6 +168,7 @@ export const getCurrentUser = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  console.log("req came in")
   try {
     const user = await User.findById(req.jwtUser?.userId).select('-auth.password_hash');
     
@@ -181,7 +182,7 @@ export const getCurrentUser = async (
     
     res.status(200).json({
       success: true,
-      data: { user },
+      user,
     });
   } catch (error) {
     console.error('Get user error:', error);
