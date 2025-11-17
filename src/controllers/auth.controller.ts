@@ -193,7 +193,7 @@ export const getCurrentUser = async (
   }
 };
 
-// Logout endpoint (optional but recommended)
+// Logout endpoint
 export const logout = async (req: Request, res: Response): Promise<void> => {
   res.clearCookie('token');
   res.status(200).json({

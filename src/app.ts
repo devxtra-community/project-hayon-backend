@@ -5,6 +5,7 @@ import passport from 'passport';
 import dotenv from 'dotenv';
 import connectDB from './config/database';
 import authRoutes from './routes/auth.routes';
+import paymentRoutes from './routes/payment.routes';
 import './config/passport';
 
 dotenv.config();
@@ -39,6 +40,7 @@ app.get('/health', (req, res) => {
 
 
 app.use('/api/auth', authRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

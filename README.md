@@ -4,7 +4,7 @@ A modern social media management platform that allows users to create, schedule,
 
 ## 📋 Project Overview
 
-**Social Media Auto-Poster** helps content creators, freelancers, and personal brands manage their social media presence efficiently by:
+**Social Media Auto-Poster** helps content creators, freelancers, and personal brands/ small business manage their social media presence efficiently by:
 - Creating posts once and publishing to multiple platforms
 - Generating platform-specific captions using AI
 - Scheduling posts for optimal timing
@@ -23,8 +23,7 @@ A modern social media management platform that allows users to create, schedule,
 
 ### For Admins
 - 👥 **User Management** - View and manage all users
-- 📈 **Usage Monitoring** - Track API calls, AI generations, and costs
-- 💰 **Revenue Tracking** - Monitor MRR and subscription metrics
+- 📈 **Usage Monitoring** - Track API calls, AI generations.
 - 🔧 **Manual Upgrades** - Support team can upgrade users manually
 - 🚨 **Failed Post Monitoring** - Real-time alerts for posting issues
 
@@ -34,7 +33,7 @@ A modern social media management platform that allows users to create, schedule,
 - **Backend**: Node.js + Express (REST API)
 - **Database**: MongoDB Atlas
 - **Styling**: Tailwind CSS + shadcn/ui
-- **Authentication**: NextAuth.js
+- **Authentication**: jwt+google oauth
 - **Charts**: Recharts
 
 
